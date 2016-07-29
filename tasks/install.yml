@@ -21,12 +21,40 @@
     - socat
   when: ansible_os_family == 'RedHat'
 
+- name: 'Add haproxy apt repo for wheezy'
+  sudo: yes
+  apt_repository: repo="deb http://http.debian.net/debian wheezy-backports main" state=present update_cache=yes
+  when: ansible_distribution_release == "wheezy"
+
+- name: 'Add haproxy apt repo for Ubuntu'
+  sudo: yes
+  apt_repository: repo="ppa:vbernat/haproxy-1.5" state=present update_cache=yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: 'Installs haproxy as well as socat for socket api'
+  apt: pkg={{ item }} state=latest
+  with_items:
+    - haproxy
+    - socat
+  when: ansible_os_family == 'Debian'
+
+- name: 'Installs haproxy as well as socat for socket api'
+  pkgin: name={{ item }} state=present
+  with_items:
+    - haproxy
+    - socat
+  when: ansible_os_family == 'Solaris'
+
+- name: 'Enable it'
+  service: name=haproxy state=started enabled=yes
+
 - name: 'Ensure chroot directory exists'
   file: name={{ haproxy_global.chroot }} state=directory
   when: haproxy_global.chroot is defined and haproxy_global.chroot
 
 - name: Disable SELinux
   selinux: policy=targeted state=disabled
+  when: ansible_os_family == 'RedHat'
 
 - name: Enable the haproxy
   service: name=haproxy enabled=yes
